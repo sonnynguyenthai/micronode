@@ -9,7 +9,7 @@ const Redis = require('ioredis');
 const app = express();
 const { rateLimit } = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis')
-const routes = require('./routes/identity-service');
+const identityRoutes = require('./routes/identity-routes');
 const errorHandler = require('./middlewares/errorHandler');
 
 mongoose.connect(process.env.MONGODB_URI)
@@ -68,7 +68,7 @@ const sensitiveEndpointsLimiter = rateLimit({
 
 app.use('/api/auth/register', sensitiveEndpointsLimiter);
 
-app.use('/api/auth', routes);
+app.use('/api/auth', identityRoutes);
 
 app.use(errorHandler);
 

@@ -8,6 +8,7 @@ const errorHandler = require('./middlewares/errorHandler');
 const { rateLimit } = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis');
 const proxy = require('express-http-proxy');
+const validateToken = require('./middlewares/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -50,7 +51,7 @@ const proxyOptions = {
         res.status(500).json({ success: false, message: 'Internal Server Error' });
     },
 }
-
+//identity service
 app.use('/v1/auth', proxy(process.env.IDENTITY_SERVICE_URL, {
     ...proxyOptions,
     proxyReqOptDecorator: (proxyReqOpt, srcReq) => {
@@ -62,6 +63,22 @@ app.use('/v1/auth', proxy(process.env.IDENTITY_SERVICE_URL, {
         return proxyResData;
     },
 }));
+
+
+// post service
+app.use('/v1/posts', validateToken, proxy(process.env.POST_SERVICE_URL, {
+    ...proxyOptions,
+    proxyReqOptDecorator: (proxyReqOpt, srcReq) => {
+        proxyReqOpt.headers['Content-Type'] = "application/json";
+        proxyReqOpt.headers['x-user-id'] = srcReq?.user?.id;
+        return proxyReqOpt;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+        logger.info(`Response from Post Service: ${proxyRes.statusCode}`);
+        return proxyResData;
+    },
+}));
+
 
 app.use(errorHandler)
 

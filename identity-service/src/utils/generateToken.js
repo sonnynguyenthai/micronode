@@ -11,11 +11,19 @@ const generateToken = async (user) => {
     const expireAt = new Date()
     expireAt.setDate(expireAt.getDate() + 7);
 
-    await RefreshToken.create({
-        user: user._id,
-        token: refreshToken,
-        expiresAt: expireAt,
-    });
+    const storedRefreshToken = await RefreshToken.findOne({ user: user._id });
+    if (storedRefreshToken) {
+        await RefreshToken.updateOne(
+            { user: user._id },
+            { token: refreshToken, expiresAt: expireAt }
+        );
+    } else {
+        await RefreshToken.create({
+            user: user._id,
+            token: refreshToken,
+            expiresAt: expireAt,
+        });
+    }
     return { accessToken, refreshToken };
 }
 

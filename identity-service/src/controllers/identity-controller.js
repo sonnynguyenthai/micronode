@@ -4,7 +4,6 @@ const User = require('../models/User');
 const { validateRegistration, validateLogin } = require('../utils/validation');
 const generateToken = require('../utils/generateToken');
 const RefreshToken = require('../models/RefreshToken');
-const { log } = require('winston');
 
 const registerUser = async (req, res) => {
     logger.info('Registering user...');
@@ -64,11 +63,6 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid password' });
         }
         const { accessToken, refreshToken } = await generateToken(user);
-        const storeRfsToken = await RefreshToken.create({ userId: user._id, token: refreshToken });
-        if (!storeRfsToken) {
-            logger.warn('Error storing refresh token');
-            return res.status(500).json({ success: false, message: 'Error storing refresh token' });
-        }
         return res.status(200).json({
             success: true,
             message: 'User logged in successfully',
@@ -96,18 +90,17 @@ const refreshToken = async (req, res) => {
             logger.warn('Refresh token not provided');
             return res.status(400).json({ success: false, message: 'Refresh token not provided' });
         }
-        const currentRfsToken = RefreshToken.findOne({ token: refreshToken });
-        if (!currentRfsToken || !currentRfsToken.expiresAt < Date.now()) {
+        const currentRfsToken = await RefreshToken.findOne({ token: refreshToken });
+        if (!currentRfsToken || currentRfsToken.expiresAt < Date.now()) {
             logger.warn('Invalid or expired refresh token');
             return res.status(404).json({ success: false, message: 'Refresh token not found' });
         }
-        const user = await User.findById(currentRfsToken.userId);
+        const user = await User.findById(currentRfsToken?.user);
         if (!user) {
             logger.warn('User not found');
             return res.status(404).json({ success: false, message: 'User not found' });
         }
         const { accessToken, refreshToken: newRefreshToken } = await generateToken(user);
-        await RefreshToken.findByIdAndUpdate(currentRfsToken._id, { token: newRefreshToken });
         return res.status(200).json({
             success: true,
             message: 'Token refreshed successfully',

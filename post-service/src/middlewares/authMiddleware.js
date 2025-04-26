@@ -7,7 +7,7 @@ const authenticatedReq = (req, res, next) => {
         logger.warn('Access attempt without user ID');
         return res.status(401).json({ success: false, message: 'Unauthorized access' });
     }
-    req.user = { userId };
+    req.user = { id: userId };
     next();
 }
 module.exports = authenticatedReq;
