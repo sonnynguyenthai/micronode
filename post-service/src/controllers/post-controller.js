@@ -7,7 +7,6 @@ const invalidatePostCache = async (req, input) => {
         const cacheKey = `post:${input}`;
         await req.redisClient.get(cacheKey);
         const keys = await req.redisClient.keys('posts:*');
-        console.log('Keys to be deleted:', keys);
         if (keys.length > 0) {
             await req.redisClient.del(keys);
         }

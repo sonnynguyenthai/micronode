@@ -46,7 +46,7 @@ const sensitiveEndpointsLimiter = (windowMs, max, message) => rateLimit({
         sendCommand: (...args) => redisClient.call(...args),
     }),
 });
-// app.use('/api/posts/create-post', sensitiveEndpointsLimiter(50, 10, 'Too many requests from this IP, please try again later.'));
+app.use('/api/posts/create-post', sensitiveEndpointsLimiter(50, 10, 'Too many requests from this IP, please try again later.'));
 app.use('/api/posts', (req, res, next) => {
     req.redisClient = redisClient;
     next();
