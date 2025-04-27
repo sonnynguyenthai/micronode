@@ -6,8 +6,8 @@ const helmet = require('helmet');
 const mediaRoutes = require('./routes/media-routes');
 const errorHandler = require('./middlewares/errorHandler');
 const logger = require('./utils/logger');
-
-
+const { connectRabbitMQ, consumeEvent } = require('./utils/rabbitmq');
+const { handlePostDeleted } = require('./eventHandlers/media-event-handlers');
 const app = express();
 const PORT = process.env.PORT || 3003;
 
@@ -28,10 +28,26 @@ app.use((req, res, next) => {
 
 app.use('/api/media', mediaRoutes);
 app.use(errorHandler);
-app.listen(PORT, () => {
-    logger.info(`Media service is running on port ${PORT}`);
+
+
+
+async function startServer() {
+    try {
+        await connectRabbitMQ();
+        //consume events
+        await consumeEvent('post.deleted', handlePostDeleted);
+        logger.info('RabbitMQ connected');
+        app.listen(PORT || 3003, () => {
+            logger.info(`Post service is running on port ${process.env.PORT}`);
+        }
+        );
+    } catch (error) {
+        logger.error('Error connecting to RabbitMQ:', error);
+        process.exit(1);
+    }
 }
-);
+
+startServer();
 //unhandle promise rejections
 process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Rejection at:', promise, "reason:", reason);

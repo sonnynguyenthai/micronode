@@ -9,6 +9,7 @@ const { rateLimit } = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis')
 const logger = require('./utils/logger');
 const postRoutes = require('./routes/post-routes');
+const { connectRabbitMQ } = require('./utils/rabbitmq');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -46,17 +47,30 @@ const sensitiveEndpointsLimiter = (windowMs, max, message) => rateLimit({
         sendCommand: (...args) => redisClient.call(...args),
     }),
 });
-app.use('/api/posts/create-post', sensitiveEndpointsLimiter(50, 10, 'Too many requests from this IP, please try again later.'));
+// app.use('/api/posts/create-post', sensitiveEndpointsLimiter(50, 10, 'Too many requests from this IP, please try again later.'));
 app.use('/api/posts', (req, res, next) => {
     req.redisClient = redisClient;
     next();
 }, postRoutes);
 app.use(errorHandler);
 
-app.listen(process.env.PORT || 3002, () => {
-    logger.info(`Post service is running on port ${process.env.PORT}`);
+async function startServer() {
+    try {
+        await connectRabbitMQ();
+        logger.info('RabbitMQ connected');
+        app.listen(process.env.PORT || 3002, () => {
+            logger.info(`Post service is running on port ${process.env.PORT}`);
+        }
+        );
+    } catch (error) {
+        logger.error('Error connecting to RabbitMQ:', error);
+        process.exit(1);
+    }
 }
-);
+
+startServer();
+
+
 
 //unhandle promise rejections
 process.on('unhandledRejection', (reason, promise) => {
