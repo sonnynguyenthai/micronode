@@ -97,6 +97,21 @@ app.use('/v1/media', validateToken, proxy(process.env.MEDIA_SERVICE_URL, {
     parseReqBody: false, // Disable body parsing for multipart/form-data
 }));
 
+// search service
+app.use('/v1/search', validateToken, proxy(process.env.SEARCH_SERVICE_URL, {
+    ...proxyOptions,
+    proxyReqOptDecorator: (proxyReqOpt, srcReq) => {
+        proxyReqOpt.headers['Content-Type'] = "application/json";
+        proxyReqOpt.headers['x-user-id'] = srcReq?.user?.id;
+        return proxyReqOpt;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+        logger.info(`Response from Search Service: ${proxyRes.statusCode}`);
+        return proxyResData;
+    },
+    parseReqBody: false, // Disable body parsing for multipart/form-data
+}));
+
 app.use(errorHandler)
 
 
@@ -105,6 +120,7 @@ app.listen(process.env.PORT || 3000, () => {
     logger.info(`Identity service is running on port ${process.env.IDENTITY_SERVICE_URL}`);
     logger.info(`Post service is running on port ${process.env.POST_SERVICE_URL}`);
     logger.info(`Media service is running on port ${process.env.MEDIA_SERVICE_URL}`);
+    logger.info(`Search service is running on port ${process.env.SEARCH_SERVICE_URL}`);
     logger.info(`Redis is running on port ${process.env.REDIS_URL}`);
 }
 );

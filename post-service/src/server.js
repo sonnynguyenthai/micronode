@@ -58,7 +58,7 @@ async function startServer() {
     try {
         await connectRabbitMQ();
         logger.info('RabbitMQ connected');
-        app.listen(process.env.PORT || 3002, () => {
+        app.listen(PORT || 3002, () => {
             logger.info(`Post service is running on port ${process.env.PORT}`);
         }
         );

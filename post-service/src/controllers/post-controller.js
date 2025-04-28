@@ -7,9 +7,14 @@ const invalidatePostCache = async (req, input) => {
     try {
         const cacheKey = `post:${input}`;
         await req.redisClient.get(cacheKey);
-        const keys = await req.redisClient.keys('posts:*');
-        if (keys.length > 0) {
-            await req.redisClient.del(keys);
+        const keysPosts = await req.redisClient.keys('posts:*');
+        if (keysPosts.length > 0) {
+            await req.redisClient.del(keysPosts);
+        }
+
+        const keysSearch = await req.redisClient.keys('search:*');
+        if (keysSearch.length > 0) {
+            await req.redisClient.del(keysSearch);
         }
         logger.info('Post cache invalidated successfully for post ID: %s', id);
     } catch (error) {
@@ -31,6 +36,12 @@ const createPost = async (req, res) => {
             return res.status(400).json({ success: false, message: 'User ID and content are required' });
         }
         const post = await Post.create({ userId: user?.id, content, mediaIds: mediaIds || [] });
+        await publishEvent('post.created', {
+            postId: post?._id.toString(),
+            userId: post?.userId,
+            content: post?.content,
+            createdAt: post?.createdAt
+        });
         await invalidatePostCache(req, post._id.toString());
         res.status(201).json({ success: true, message: 'Post created successfully', data: post });
         logger.info('Post created successfully: %o', post);
