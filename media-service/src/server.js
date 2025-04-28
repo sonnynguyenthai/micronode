@@ -11,7 +11,7 @@ const { handlePostDeleted } = require('./eventHandlers/media-event-handlers');
 const app = express();
 const PORT = process.env.PORT || 3003;
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGODB_URI)
     .then(() => logger.info('MongoDB connected'))
     .catch(err => logger.error('MongoDB connection error:', err));
 

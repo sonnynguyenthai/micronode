@@ -14,7 +14,7 @@ const { handlePostCreated, handlePostDeleted } = require('./eventHandlers/search
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-mongoose.connect(process.env.MONGO_URI).then(() => {
+mongoose.connect(process.env.MONGODB_URI).then(() => {
     logger.info('MongoDB connected');
 }
 ).catch((err) => {
