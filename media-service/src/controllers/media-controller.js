@@ -4,6 +4,7 @@ const Media = require("../models/Media");
 
 const uploadMedia = async (req, res) => {
     logger.info("Uploading media...");
+    logger.info("Uploading media...");
     try {
         const { file } = req;
         if (!file) {
